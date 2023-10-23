@@ -11,31 +11,41 @@ pipeline {
                 sh 'npm install'
             }
         }
-        stage('Lint') {
-            steps {
-                sh 'npm run lint' 
-            }
-        }
         stage('Test') {
             steps {
-                sh 'npm test'  
+                sh './jenkins/scripts/test.sh'
+            }
+        }
+        stage('Manual Approval') {
+            steps {
+                input(
+                    id: 'manual',
+                    message: 'Lanjutkan ke tahap Deploy?',
+                    submitter: 'admin', 
+                    parameters: [booleanParam(name: 'proceed', defaultValue: true, description: 'Klik "Proceed" untuk melanjutkan')]
+                )
             }
         }
         stage('Deploy') {
+            when {
+                expression { currentBuild.rawBuild.getAction(ParametersAction)?.parameters['proceed'].value }
+            }
             steps {
-                sh 'npm run deploy'
+                sh './jenkins/scripts/deliver.sh'
+                sh 'sleep 1m'
+                sh './jenkins/scripts/kill.sh'
             }
         }
     }
     post {
         success {
-            echo 'Proyek berhasil dibangun dan diuji.'
+            echo 'Proyek berhasil dibangun, diuji, dan di-deploy.'
         }
         unstable {
             echo 'Proyek tidak stabil.'
         }
         failure {
-            echo 'Proyek gagal dibangun atau diuji.'
+            echo 'Proyek gagal dibangun, diuji, atau di-deploy.'
         }
     }
 }
