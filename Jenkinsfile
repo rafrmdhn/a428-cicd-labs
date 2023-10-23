@@ -7,7 +7,7 @@ pipeline {
     }
 
     triggers {
-        poolSCM('*/2 * * * *')    
+        pollSCM('*/2 * * * *')    
     }
 
     stages {
